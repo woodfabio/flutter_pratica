@@ -1,0 +1,207 @@
+BRANCH 11 - MVC e Notifiers
+
+
+1 - MVC (Model View Controller):
+
+	Modelo de engenharia de software que separa a interface do usuário das regras de negócio (lógica).
+	Isso permite a reutilização de código entre projetos diferentes, facilidade na manutenção e a criação de múltiplas
+	interfaces do sistema com os usuários.
+
+	Divide a aplicação em 3 camadas:
+
+		- Models: responsável pelo acesso e manipulação dos dados da sua aplicação. Nelas estão as funções de consulta
+				a bancos de dados ou APIs (um JSON p. ex.).
+
+		- Views: responsável pela interface que será exibida ao usuário (onde está o HTML e etc.)
+
+		- Controllers: faz o meio de campo entre as outras duas camadas: recebe as requisições do usuário, obtém os 
+					dados da camada Model e usa a camada View para renderizar as informações.
+
+
+	Router: cria as rotas entre p. ex. um endereço e um método de um controller.
+
+
+2 - ChangeNotifier:
+
+	Podemos atribuir funções a variáveis e chamá-las quando necessário.
+
+	Podemos criar uma classe Controller que tem uma variável e uma função:
+
+		class Controller {
+			var counter = 0;
+			void increment() {
+				counter++;
+			}			
+		}
+	
+	Agora podemos chamar a função "increment" da classe Controller dentro da função main, assim:
+
+		controller.increment
+
+	Considerando que precisamos mudar a nossa tela sempre que a função "increment" é chamada (para exibir o novo valor de
+	"counter"), precisamos informar que queremos executar uma função setState sempre que essa função "increment" for usada.
+
+	Isso pode ser feito na própria classe Controller. Para isso precisamos de uma reatividade baseada em "Listenable", ou
+	seja, adicionar um "ouvinte" que "ouve" quando a função "increment" for chamada para mandar que o setState seja
+	executado.
+
+	Faremos a classe Controller extender "ChangeNotifier", que é uma classe que implementa "Listenable".
+	Assim, essa classe pdoe receber informações de outro local e disparar nesse mesmo local uma função.
+
+	Após fazermos isso, vamos criar na função main uma função initState que informa a função que será chamada sempre
+	que o controller quiser:
+
+		@override
+		void initState() {
+			super.initState();
+			controller.addListener(() {
+				setState(() {});
+			});
+		}
+
+	Aqui, adicionamos um "listener" em relação ao controller, permitindo que seja "ouvido" quando a função do controller
+	for chamada, e quando isso for "ouvido" será executada a função setState.
+
+	Mas para que isso aconteça também precisamos adicionar um "notificador" na classe Controller, assim:
+
+		class Controller extends ChangeNotifier {
+			var counter = 0;
+			void increment() {
+				counter++;
+				notifyListeners();
+			}			
+		}
+
+
+3 - ChangeNotifier:
+
+	É igual ao caso anterior, porém podemos usar um valor pré-definido.
+	Podemos tornar a variável "counter" da classe Controller reativa, sem precisar de uma função "notificadora", assim:
+
+		class Controller extends ChangeNotifier {
+			var counter$ = ValueNotifier(0);
+			void increment() {
+				counter$.value++;
+			}			
+		}	
+
+	Tornamos a variável "counter" como sendo da classe "ValueNotifier", que extende de "ChangeNotifier".
+	Dentro dessa classe, há uma função setter que muda o valor da variável sempre que ela recebe um valor diferente
+	e chama a função notifyListener.
+
+	Lembrando que, como o valor do objeto "counter" é acessado por "counter.value", podemos fazer um método getter
+	na classe Controller para facilitar o acesso a esse valor:
+
+		class Controller extends ChangeNotifier {
+			var counter$ = ValueNotifier(0);
+			int get counter => counter$.value;
+			void increment() {
+				counter$.value++;
+			}			
+		}
+	
+	Também mudamos um pouco a função initState na classe main:
+	
+		@override
+		void initState() {
+			super.initState();
+			controller.counter$.addListener(() {
+				setState(() {});
+			});
+		}
+
+	Lembrando que a classe Controller pode ter vários objetos da classe ValueNotifier, gerando várias reatividades.
+
+	Para limitar a ação do desenvolvedor e evitar erros podemos criar uma classe "Counter" que extende de ValueNotifier
+	e tem um tipo limitado de valor que pode armazenar (no caso, novamente com 0 como valor default):
+
+		class Counter extends ValueNotifier<int> {
+			Counter() : super(0);
+		}
+
+	Como a classe Counter extende de ValueNotifier, ela mesma pode ter a função increment, já que ValueNotifier por padrão
+	já faz toda a função de notificar:
+
+		class Counter extends ValueNotifier<int> {
+			Counter() : super(0);
+
+			increment() =>  value++;
+		}
+
+	Agora podemos criar uma variável da classe Counter diretamente na classe main que já possui reatividade.
+
+
+4 - Builders:
+
+	Para não precisarmos rebuildar a tela inteira cada vez que o valor da variável counter é alterada, podemos criar
+	builder próprios apenas para o widget que exibe a variável.
+
+	Primeiro, eliminamos o método initState que fizemos anteriormente.
+	Depois, usamos o widget builder de ValueNotifier chamado "AnimatedBuilder":
+
+		AnimatedBuilder(
+			animation: counter,
+			builder: (context, child) {
+				return Text( '${counter.value}' )
+			}
+		)
+
+	Repare que "AnimatedBuilder" espera receber um Listenable como parâmetro, e que Counter extende de ValueNotifier, que
+	extende de ChangeNotifier, que implementa Lsitenable, logo, Counter é aceito como parâmetro.
+
+	Também podemos usar o widget builder "ValueListenableBuilde", que espera especificamente um ValueNotifier como
+	parâmetro:
+
+		ValueListenableBuilder(
+			valueListenable: counter,
+			builder: (context, value, child) {
+				return Text( '$value' )
+			}
+		)
+
+	Repare que nesse caso não precisamos referenciar o valor de Counter como "counter.value", pois o builder já recebe
+	este valor junto com o contexto e o child.
+
+	Podemos também limitar o retorno do builder ValueListenableBuilder, assim: 
+
+		ValueListenableBuilder<int>(
+			valueListenable: counter,
+			builder: (context, value, child) {
+				return Text( '$value' )
+			}
+		)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
