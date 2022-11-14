@@ -12,7 +12,7 @@ e novos métodos surgem:
 	- popUntil
 
 Na MaterialApp do "MyApp" temos um parâmetro chamado "routes" que recebe um map onde a chave é o nome da rota.
-A rota '/' sempre é a rota inicial, e as demais são noemadas como '/details', por exemplo. Vejamos:
+A rota '/' sempre é a rota inicial, e as demais são nomeadas como em '/details', por exemplo. Vejamos:
 
 	Widget build(BuildContext context) {
 		return MaterialApp(
@@ -53,7 +53,7 @@ por padrão é do tipo dynamic"). Chama-se a isso de "inferência de tipo".
 Atenção que isto NÃO GARANTE que o argumento é do tipo HomeArguments, estamos apenas afirmando ao código que ele é desse
 tipo, e caso não seja o código resultará em erro.
 
-Agora apra navegar usamos:
+Agora para navegar usamos:
 
 	Navigator.pushNamed(
 		context,

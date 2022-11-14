@@ -9,7 +9,7 @@ Depois, criamos classes para cada estado da SplashScreen:
 
 	abstract class SplashState {}
 
-	class SplashStateAthenticated extends SplashState {}
+	class SplashStateAuthenticated extends SplashState {}
 
 	class SplashStateUnauthenticated extends SplashState {}
 
@@ -22,7 +22,6 @@ por exemplo, veja:
 
 		Future<SplashState> isAuthenticated() async {
 			final prefs = await SharedPreferences.getInstance();
-			prefs.reload();
 			final isAuthenticated = prefs.getBool('hasUser');
 
 			if (isAuthenticated != null && isAuthenticated) {
@@ -34,8 +33,11 @@ por exemplo, veja:
 		}
 	}
 
+Repare que a classe "SharedPreferences" é uma classe que permite executar um "wrap" no armazenamento local da máquina,
+e quando instanciada (.getInstance()) permite acessar esse armazenamento, permitindo salvar e acessar dados localmente.
+
 A função "getBool" usada usa uma estrutura chave-valor e busca a chave 'hasUser' no objeto do tipo SharedPreferences que
-foi isntanciado na variável "prefs". Caso exista essa chave 'hasUser' a função retorna true, senão, retorna false.
+foi instanciado na variável "prefs". Caso exista essa chave 'hasUser' a função retorna true, senão, retorna false.
 
 Depois, na classe "_SplashScreenState" criamos uma função initState, assim:
 
@@ -43,7 +45,7 @@ Depois, na classe "_SplashScreenState" criamos uma função initState, assim:
 	void initState() {
 		Future.delayed(const Duration(seconds: 2)).then(		// aqui novamente simulamos o tempo de chamada de uma API
 			(value) async {
-				final anthenticationState = controller.isAuthenticated().then((value) {
+				final authenticationState = controller.isAuthenticated().then((value) {
 					if (value.runtimeType == SplashStateAuthenticated) {
 						//TODO: navegar para homepage
 					} else if (value.runtimeType == SplashStateUnauthenticated) {

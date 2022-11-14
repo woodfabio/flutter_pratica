@@ -1,0 +1,166 @@
+BRANCH 12 - MobX
+
+
+MobX é uma biblioteca de gerenciamento de estados que aplica programação funcional reativa (TFRP).
+
+Vejamos como ele funciona:
+
+	--evento--> [AÇÃO] --modifica--> [ESTADO] --atualiza--> [VALORES COMPUTADOS] --dispara--> [REAÇÕES] --
+			   ^																   |
+			   |																   |
+			   -----------------------------invoca-----------------------------------------------------
+
+Ex.:	  ação: pressionar botão de login
+	estado: passa a ser "logado"
+	reação: trocar a tela
+
+Vejamos na prática.
+
+-> Requisitos: pacote mobx: ^1.1.1
+
+Suponha a seguinte classe:
+
+	class Counter {
+
+		Observable _count = Observable(0);
+		Action increment;
+
+		Counter() {
+			increment = Action(_increment);
+		}		
+
+		int get count = > _count.value;
+		
+		void _increment() {
+			_count.value++;
+		}		
+
+	}
+
+Onde:
+
+	_count: é o atributo que define o estado, que por isso é da classe "Observable". Recebe valor inicial 0.
+	count: variável do método getter para o valor de "_count" (lembrando que chamar apenas a variável "count" não retorna
+			o seu valor, pois ele está em "_count.value").
+	_increment: função que muda o valor de "_count". NÃO É uma ação e, portanto, NÃO MUDA o estado de "_count".
+	increment: ação (classe "Action") à qual a função "_increment" é vinculada. Esta ação ao ser chamada executa a função
+			"_increment", porém também mudando o estado de "_count".
+
+Repare:
+
+	ESTADO: _count
+	AÇÃO: increment
+
+Veja que ainda falta a REAÇÃO.
+Ou seja, temos estados, temos uma ação que muda esse estado mas não temos uma reação a essa mudança de estado que, no caso,
+seria a mudança de tela.
+Para isso, usamos o pacote "flutter_mobx: ^1.1.0". Agora podemos usar um builder na função main chamado "Observer":
+
+-> Requisitos: pacote flutter_mobx: ^1.1.0
+
+	body: Center(
+		child: Column(			
+			return Text(
+				'You have pressed the button this many times:',
+			),
+			Observer(
+				builder: (_) {
+					return Text(
+						'${counter.count}',
+					),
+				}
+			),
+		),
+	),
+
+Agora o builder "Observer" está "observando" as mudanças de estado na variável "counter" e automaticamente rebuilda a tela
+sempre que há uma mudança (que é o que "dispara" a reação). É semelhante ao builder "listener" que já vimos
+anteriormente.
+
+Agora vamos ver como deixar esta código mais legível:
+
+-> Requisitos: mobx_codegen: ^1.0.3 (em "dev_dependencies")
+		    build_runner: ^1.8.0 (em "dev_dependecies")
+
+Este dois pacotes juntos formam um gerador de código, ou seja, gera um código totalmente separado para executar funções
+a partir das variáveis que criamos.
+
+Agora a classe "Counter" pode ser assim:
+
+	import 'package:mobx/mobx.dart';
+	part 'counter.g.dart';
+
+	class Counter = _Counter with _$Counter;
+
+	abstract class _Counter with Store {
+
+		@observable
+		int count = 0;
+
+		@action		
+		void increment() {
+			count++;
+		}		
+
+	}
+
+E para funcionar executamos no terminal:
+	
+	flutter packages pub run build_runner watch
+
+Podemos também executar este comando (que observa mudanças no arquivo apenas uma vez):
+
+	flutter packages pub run build_runner build
+
+Repare:
+
+	Em "part 'counter.g.dart';" o gerador de código gera um outro arquivo que tem o mesmo nome da classe que criamos porém
+	com um ".g" após o nome (no caso, "counter.g.dart"). Este comando "part" indica que vamos utilizar este arquivo 
+	counter.g.dart.
+
+	**ATENÇÃO** nós NÃO DEVEMOS modificar manualmente estes arquivos gerados como o "counter.g.dart".
+	
+	Esse novo arquivo "counter.g.dart" cria uma classe chamada "$Counter", que precisamos se seja mesclada com a nossa
+	classe "_Counter" (que recebeu esse underscore para evita confusões de nome), e isso é feito usando o comando
+	"class Counter = _Counter with _$Counter;".
+	Repare também que a nossa classe "_Counter" precisa agora ser abstrata para que ela não seja instanciada e apenas a
+	classe mesclada "Counter" possa ser instanciada.
+
+	Em "_Counter with Store" indicamos que a classe deve observar todos os Observables e Actions que há nela.
+									
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
