@@ -21,7 +21,7 @@ A rota '/' sempre é a rota inicial, e as demais são nomeadas como em '/details
 			initialRoute: '/',
 			routes: {
 				'/': (context) => HomeScreen(),
-				'/details': => DetailScreen(),
+				'/details': (context) => DetailScreen(),
 			},
 		);
 	}

@@ -31,21 +31,16 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  mask_text_input_formatter: ^2.4.0
-  dio: ^4.0.6
-  mobx: ^1.1.1
-  flutter_mbox: ^1.1.0
 
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.2
+  flutter_bloc: ^8.1.1
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  mobx_codegen: ^1.0.3
-  build_runner: ^1.8.0
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is

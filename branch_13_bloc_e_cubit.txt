@@ -1,0 +1,506 @@
+BRANCH 13 - BLoC e Cubit
+
+"Business Logic Component" é um padrão de separação de responsabilidade entre tela e regras de negócio.
+Baseia-se puramente em "streams" para controlar o estado, tanto na entrada quanto na saída de dados.
+
+Outputs e inputs serão baseados em "classes de eventos".
+Em outras palavras, um estado só é modificado quando ocorre um evento.
+
+Ex: ao invés de criar um objeto da classe "User" passando os valores dos seus atributos para o construtor desta classe,
+iremos passar esses valores para uma classe de evento "createUser" que, por sua vez, irá criar o objeto "User".
+
+
+Vejamos o exemplo:
+
+Suponhamos que temos a classe "Client"
+
+	class Client {
+
+		String name;
+
+		Client ({
+			required this.name,
+		});
+
+	}
+
+e também a classe "ClientRepository":
+
+	class ClientRepository {
+
+		final list<Client> _client = [];
+
+		List<Client> loadClients() {
+			// retorna a lista de um repositorio ou API
+		}
+
+		List<Client> addClient(Client client) {
+			_clients.add(client);
+			return _clients:
+		}
+
+		List<Client> removeClient(Client client) {
+			_clients.remove(client);
+		}
+	
+	}
+
+Repare que as ações de adicionar ou remover um cliente, bem como mostrar a lista de clientes na tela são EVENTOS, então 
+devemos criar classes para eles.
+
+Para isso, criamos a pasta "bloc" onde teremos os "states".
+Primeiro criamos uma classe abstrata de evento e depois criamos classes para cada evento extendendo dessa classe abstrata
+em um arquivo "client_events.dart":
+
+	abstract class ClientEvent {}
+
+	class LoadClientEvent extends ClientEvent {}
+
+	class AddClientEvent extends ClientEvent {
+
+		Client client;
+
+		AddClientEvent({
+			required this.client,
+		});
+
+	}
+
+	class RemoveClientEvent extends ClientEvent {
+
+		Client client;
+
+		RemvoeClientEvent({
+			required this.client,
+		});
+
+	}
+
+Agora criamos os states de fato em um arquivo "client_state.dart":
+
+	abstract class ClientState {
+
+		List<Client> clients;
+
+		ClientState({
+			required this.clients,
+		});
+
+	}
+
+	class ClientInitialState extends ClientState {
+
+		ClientInitialState() : super (clients[]);
+
+	}
+
+	class ClientSuccessState extends ClientState {
+
+		ClientSuccessState({
+			required List<Client> clients,
+		}) : super (clients: clients);
+
+	}
+
+Agora criamos o Bloc propriamente dito em um arquivo "client_bloc.dart", que vai ser uma espécie de controller:
+
+	class ClientBloc {
+
+		final _clientRepository = ClientsRepository();
+		final StreamController<ClientEvent> _inputClientController = StreamController<ClientEvent>();
+		final StreamController<ClientState> _outputClientController = StreamController<ClientState>();
+
+		// todo evento (stream) de entrada (input) sera do tipo Sink:
+		Sink<ClientEvent> get inputClient => _inputClientController.sink;
+		Stream<ClientState> get stream => _outputClientController.stream;
+
+		// o construtor recebe uma funcao que sera chamada cada vez que o input receber um evento:
+		ClientBloc() {
+			_inputClientController.stream.listen(_mapEventToState)
+		}
+
+		// funcao para mapear qual state usaremos de acordo com o nosso evento:
+		_mapEventToState(ClientEvent event) {
+
+			List<Client> clients = [];
+
+			if (event is LoadClientEvent) {
+				clients = _clientRepository.loadClients();
+			} else if (event is AddClientEvent) {
+				clients = _clientRepository.addClients(event.client);
+			} else if (event is removeClientEvent) {
+				clients = _clientRepository.removeClients(event.client);
+			}
+
+			_outputClientController.add(ClientSuccessState(clients: clients));
+
+		}
+
+	}
+
+	Em resumo:
+
+		- temos 2 atributos que controlam "streams" de input (mudanças nos dados) e de output (retornos para
+			a tela, em outras palavras, estados);
+		- o construtor recebe uma função "listener" que executará a função "_mapEventToState" sempre que houver um
+			evento no input (ou seja, fica ouvindo quando há mudanças nos dados);
+		- a função "_mapEventToState" é um "handler", é semelhante a um "switch case" que executa uma operação e muda
+			o estado da tela (output) de acordo com o evento ocorrido.
+
+
+		************
+		O bloc é uma telefonista que recebe um evento, executa uma ação e devolve um estado (atualizado após a ação).
+		************
+
+
+Agora vamos ver como esse bloc é usado na classe "_ClientsPageState":
+
+	class _ClientsPageState extends State<ClientsPage> {
+
+		late final ClientBloc bloc;
+
+		@override
+		void initState() {
+			super.initState();
+			bloc = ClientBloc();
+			bloc.inputClient.add(LoadClientEvent()); // estamos passando ao input do bloc um evento de load
+		}
+
+		@override
+		void dispose() {				// importante usar dispose quando necessario!
+			bloc.inputClient.close();
+			super.dispose();
+		}
+
+
+		@override
+		Widget build(BuildContext context) {
+			return Scaffold(
+		
+				// partes do Scaffold etc etc...
+
+				body: StreamBuilder<ClientState>(
+					stream: bloc.stream,         	// bloc.stream == nosso output
+					builder: (context, snapshot) {	// aqui, "snapshot" eh do tipo "ClientState"
+ 
+						final clientList = snapshot.data?.clients ?? [] // caso seja nulo, recebe uma lista vazia
+
+						return ListView(
+							
+							// detalhes do ListView exibindo os Clients etc etc...
+								
+						);
+
+					}
+				),
+			);
+		}
+
+	}
+
+Nosso Scafofld também terá botões para executar os eventos de adicionar e remover clientes:
+
+	IconButton(
+		icon: const Icon(Icons.add),
+		onPressed: () {
+			bloc.inputClient.add(
+				AddClientEvent(client: Client(nome: randomName())); // estamos usando essa funcao para simular nome
+			);
+		}
+	),
+
+	IconButton(
+		icon: const Icon(Icons.person_remove),
+		onPressed: () {
+			bloc.inputClient.add(
+				RemoveClientEvent(client: clientsList[index]);
+			);
+		}
+	)
+
+
+Agora vejamos como usar o package bloc (não confundir com o padrão bloc, este é apenas um pacote que facilita o uso deste
+padrão).
+
+Requisitos: bloc: ^8.0.3		(em "dependences")
+		 flutter_bloc: ^8.0.1 (em "dependences") ---> este pacote tem widgets que facilitam o consumo do bloc, sem
+										  precisar, por exemplo, do StreamBuilder.
+
+Usando estes pacotes precisamos alterar apenas a nossa classe ClientBloc:
+
+	class ClientBloc extends Bloc<ClientEvent, ClientState> {	// informar ao Bloc que tipo de input e output sera recebido
+
+		
+		ClientBloc() : super(ClientInitialState()) {
+
+		final _clientRepository = ClientsRepository();
+
+			on<LoadClientEvent>(
+				((event, emit) => emit(ClientSuccessState(clients: _clientRepository.loadClients()))),
+			);
+			on<AddClientEvent>(
+				((event, emit) => emit(ClientSuccessState(clients: _clientRepository.addClient(event.client)))),
+			);
+			on<RemoveClientEvent>(
+				((event, emit) => emit(ClientSuccessState(clients: _clientRepository.removeClient(event.client)))),
+			);
+			
+		}		
+
+	}
+
+	Resumo das mudanças:
+
+		- a classe "ClientBloc" extende de "Bloc", e essa extensão deve informar dentro dos "<>" o tipo de evento
+			(input) e de estad (output), no caso, "Bloc<ClientEvent, ClientState>";
+		- não precisamos mais dos atributos "_inputClientController" e "_outputClientController" e seus respectivos
+			getters.
+		- a função handler "_mapEventToState" agora é substituída por uma estrutura dentro do construtor, que também
+			recebe como atributo "super" o estado inicial que queremos, no caso, "ClientInitialState()";
+
+Agora vejamos as mudanças em "_ClientsPageState":
+
+	class _ClientsPageState extends State<ClientsPage> {
+
+		late final ClientBloc bloc;
+
+		@override
+		void initState() {
+			super.initState();
+			bloc = ClientBloc();
+			bloc.add(LoadClientEvent()); // estamos passando ao input do bloc um evento de load
+		}
+
+		@override
+		void dispose() {				// importante usar dispose quando necessario!
+			bloc.close();
+			super.dispose();
+		}
+
+
+		@override
+		Widget build(BuildContext context) {
+			return Scaffold(
+		
+				// partes do Scaffold etc etc...
+
+				body: BlocBuilder<ClientBloc, ClientState>(
+					bloc: bloc
+					builder: (context, state) {	
+						
+						if (state is ClientInitialState) {
+							return const Center(
+								child: CircularProgressIndicator(),
+							);
+						} else if (state is ClientSuccessState) {
+
+							final clientsList = state.clients;
+
+							return ListView(
+							
+								// detalhes do ListView exibindo os Clients etc etc...
+								
+							);
+						}
+						return Container(); // caso nao seja nenhum dos estados listados acima
+					},
+				),
+			);
+		}
+
+	}
+
+E também as mudanças nos botões:
+
+	IconButton(
+		icon: const Icon(Icons.add),
+		onPressed: () {
+			bloc.add(
+				AddClientEvent(client: Client(nome: randomName())); // estamos usando essa funcao para simular nome
+			);
+		}
+	),
+
+	IconButton(
+		icon: const Icon(Icons.person_remove),
+		onPressed: () {
+			bloc.add(
+				RemoveClientEvent(client: clientsList[index]);
+			);
+		}
+	)
+
+	
+	Resumo das mudanças:
+
+		- na tela, na função "initState" a expressão "bloc.inputClient.add(LoadClientEvent());" passa a ser
+			"bloc.add(LoadClientEvent());", pois a classe "ClientBloc" não tem mais o atributo "_inputClientController";
+		- o mesmo acontece na função "dispose" da tela e no "onPressed" dos botões;
+		- na tela, StreamBuilder foi substituído por BlocBuilder (com suas respectivas adaptações);
+
+
+Além do Bloc temos também o Cubit, que é uma versão simplificada do Bloc.
+No Cubit não há eventos e, portanto, não há necessidade de handler.
+Vejamos um exemplo usando o app contador padrão do Flutter:
+
+	class CounterCubit extends Cubit<int> {
+		
+		CounterCubit():super(0);
+
+		void increment() => emit(state + 1);
+		void decrement() => emit(state - 1);
+
+	}
+
+Já na na classe "_ClientsPageState" o código fica assim (repare também no floatingActionButton):
+
+	class _ClientsPageState extends State<ClientsPage> {
+
+		final controller = CounterCubit();
+
+		@override
+		Widget build(BuildContext context) {
+			return Scaffold(
+		
+				// partes do Scaffold etc etc...
+
+				body: BlocBuilder<CounterCubit, int>(
+					bloc: controller,
+					builder: (context, state) {
+
+						return Text(
+							'$state',								
+						);
+
+					}
+
+				floatingActionButton: FloatingActionButton(
+					
+					onPressed: () => controller.increment(),
+					tooltip: 'increment',
+					child: const Icon(Icons.add),
+
+				),
+
+				),
+			);
+		}
+
+	}
+
+Repare que não há mais eventos no código.
+
+	
+
+
+
+
+
+
+
+
+A partir daqui, são anotações incompletas da aula.
+
+//===========================================================
+
+
+
+
+
+
+estados -> eventos
+
+
+1 - Evento:
+
+	Evento é uma classe abstrata genérica com classes que extendem dele, semelhante ao gerenciamento de estados:
+
+		abstract class HomeEvent {}
+
+		class AddCounter extends HomeEvent {}
+
+		class minusCounter extends HomeEvent {}
+	
+
+2 - Bloc:
+
+	É o nosso controller, onde recebemos eventos, fazemos operações e retornamos estados para nossa view.
+	O chamado "handler" é essa estrutura semelhando a um switch case que emite estados diferentes conforme a ação
+	ocorrida.
+
+		class homeBloc extends Bloc<HomeEvent, int> {
+			HomeBloc() : super(0) {
+				on<AddCounter>((event, emmiter) => emit(state + 1));
+				on<MinusCounter>((event, emmiter) => emit(state - 1));
+			}
+		}
+
+
+3 - Widgets:
+
+	BlocProvider: é um widget que basicamente faz o equivalente a "final controller = HomeController();.
+				
+				BlocProvider(
+					create: 
+				)
+
+
+
+
+
+
+Suponhamos a classe "Client":
+
+	class Client {
+		String nome;
+
+		Client({
+			required this.nome,
+		});
+	}
+
+E também a classe "ClientsRepository":
+
+	class ClientsRepository {
+		final list<Client> _clients = [];
+	}
+
+Repare que esta última classe começa com seu atributo "_clients" recebendo uma lista vazia.
+
+									
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

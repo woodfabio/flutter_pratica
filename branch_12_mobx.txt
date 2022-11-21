@@ -120,7 +120,7 @@ Repare:
 
 	**ATENÇÃO** nós NÃO DEVEMOS modificar manualmente estes arquivos gerados como o "counter.g.dart".
 	
-	Esse novo arquivo "counter.g.dart" cria uma classe chamada "$Counter", que precisamos se seja mesclada com a nossa
+	Esse novo arquivo "counter.g.dart" cria uma classe chamada "$Counter", que precisamos que seja mesclada com a nossa
 	classe "_Counter" (que recebeu esse underscore para evita confusões de nome), e isso é feito usando o comando
 	"class Counter = _Counter with _$Counter;".
 	Repare também que a nossa classe "_Counter" precisa agora ser abstrata para que ela não seja instanciada e apenas a
