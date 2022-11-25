@@ -1,0 +1,135 @@
+BRANCH 14 - S.O.L.I.D.
+
+São 5 princípios:
+
+	1 - (SRP) Princípio da responsabilidade única
+	2 - (OCP) Princípio do aberto/fechado
+	3 - (LSP) Princípio da substituição de Liskov
+	4 - (ISP) Princípio da segregação de interfaces
+	5 - (DIP) Princípio da inversão de dependências
+
+
+1 - (SRP) Princípio da responsabilidade única:
+
+	Uma classe deve ter apenas UM motivo para mudar.
+	Uma classe deve ter UMA RESPONSABILIDADE por ator.
+
+	Ex.: faz sentido uma classe "ContaCorrente" ter a função "validarContaCorrente" porque é uma função crucial para ela
+		e apenas para ela, e não faz sentido ela ter a função "salvarModificacoes" porque esta função também é do
+		interesse de várias outras classes.
+
+
+2 - (OCP) Princípio do aberto/fechado:
+
+	Classes devem ser abertas para extensão mas NÃO MODIFICÁVEIS.
+	Ou seja, se quisermos aprimorar uma classe já implementada e funcional não devemos modificá-la, mas sim extendê-la
+	em uma nova classe com esses aprimoramentos.
+
+
+3 - (LSP) Princípio da substituição de Liskov:
+
+	Os subtipos devem ser substituíveis pelos seus tipos-base.
+	Ex.: se a classe abstrata "Conta" tiver várias especializações (extensões), todas elas devem ser substituíveis entre 
+		si sem quebrar o sistema.
+		Mesmo se uma das contas não dever ser capaz de executar, por exemplo, a classe "ContaCorrente" não puder
+		executar a função "fazerEmprestimo", ela ainda assim deve ter esta função, porém quando executada ela retornará
+		uma exceção:
+
+			@override
+			void fazerEmprestimo() => throw Exception('Este tipo de conta não pode fazer empréstimos.');
+
+		assim o programa não quebrará.
+
+
+4 - (ISP) Princípio da segregação de interfaces:
+
+	Ter muitas interfaces específicas é melhor do que ter apenas uma interface geral.
+	Ex.: usando o exemplo anterior da classe abstrata "Conta", se ela tem 2 funções e uma delas não é utilizável na classe
+		extendida "ContaCorrente", é melhor usarmos duas classes abstratas "Conta", uma para cada tipo de conta extendida.
+		Assim, teríamos a classe abstrata "Conta1", que é extendida por classes que podem executar a função
+		"fazerEmprestimo" e a classe abstrata "Conta2" que é extendida por classes que NÃO PODEM executar a função
+		"fazerEmprestimo", como a classe "ContaCorrente".
+
+
+5 - (DIP) Princípio da inversão de dependências:
+
+	Devemos sempre depender de abstrações, não de classes concretas.
+	Exemplo ruim:
+
+		class ContaCorrente {
+
+			RepositoriodePagamento _repositorio;
+
+			ContaCorrente(Repositorio repositorio) {
+				_repositorio = RepositoriodePagamento();
+			}
+
+		}
+
+	Repare que a classe "ContaCorrente" possui um atributo "_repositorio" da classe "RepositoriodePagamento" e que seu 
+	construtor	já atribui uma instância da classe "RepositoriodePagamento" a esse atributo. Estamos dependendo de uma
+	classe concreta, que é a classe "RepositoriodePagamento".
+
+	Vejamos um exemplo bom:
+
+		abstract class Repositorio {}
+
+		class RepositoriodePagamento extends Repositorio {
+
+			// etc etc etc corpo da classe
+
+		}
+
+		class ContaCorrente {
+
+			Repositorio _repositorio;
+
+			ContaCorrente(Repositorio repositorio) {
+				_repositorio = repositorio;
+			}
+
+		}
+
+	Aqui, ao invés de depender de uma classe concreta como "RepositoriodePagamento" nós dependemos de uma classe abstrata
+	"Repositorio", e quem for instanciar um objeto da classe "ContaCorrente" que irá informar ao construtor qual a classe
+	concreta utilizada.
+
+	
+
+									
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
