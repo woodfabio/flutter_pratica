@@ -198,7 +198,7 @@ Agora vamos ver como esse bloc é usado na classe "_ClientsPageState":
 
 	}
 
-Nosso Scafofld também terá botões para executar os eventos de adicionar e remover clientes:
+Nosso Scaffold também terá botões para executar os eventos de adicionar e remover clientes:
 
 	IconButton(
 		icon: const Icon(Icons.add),
